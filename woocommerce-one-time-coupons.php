@@ -76,13 +76,6 @@ add_action('woocommerce_coupon_data_panels', function ($coupon_id, $coupon) {
     echo "<legend>Test</legend>";
 
     woocommerce_wp_textarea_input(array(
-        'id' => 'all_codes',
-        'label' => __('All Codes', WC_OTC_TEXT_DOMAIN),
-        'value' => get_codes($coupon_id),
-        'disabled' => true
-    ));
-
-    woocommerce_wp_textarea_input(array(
         'id' => 'free_codes',
         'label' => __('Free Codes', WC_OTC_TEXT_DOMAIN),
         'value' => get_codes($coupon_id, WC_OTC_FREE),
@@ -115,7 +108,7 @@ function get_codes($coupon_id, $state = WC_OTC_ALL)
     foreach ($result as $row)
         $codes[] = $row->code;
 
-    return implode("\r\n", $codes);
+    return implode("\n", $codes);
 }
 
 add_action('woocommerce_process_shop_coupon_meta', function ($post_id) {
@@ -164,19 +157,30 @@ add_filter('woocommerce_coupon_is_valid', function ($value, WC_Coupon $coupon) {
     $otc_coupon = WC()->session->get("wc_otc_coupon");
     if ($otc_coupon && $otc_coupon["original"] == $coupon->get_code()) {
         if ($otc_coupon["order_id"])
-            throw new Exception("Already used");
+            throw new Exception(__("This coupon has already been used.", WC_OTC_TEXT_DOMAIN));
         return $value;
     }
 
     if ($coupon->get_meta('is_otc_coupon'))
-        throw new Exception("is otc");
-
+        return false;
     return $value;
 }, 1, 2);
+
+
+add_action('woocommerce_removed_coupon', function ($coupon_code) {
+    $otc_coupon = WC()->session->get("wc_otc_coupon");
+    if ($otc_coupon && $otc_coupon["original"] == $coupon_code)
+        WC()->session->set("wc_otc_coupon", null);
+}, 10, 1);
 
 add_action('woocommerce_new_order', function ($order_id) {
     global $wpdb;
     $table_name = $wpdb->prefix . WC_OTC_TABLE;
     $otc_coupon = WC()->session->get("wc_otc_coupon");
-    $wpdb->update($table_name, ["order_id" => $order_id], ["ID" => $otc_coupon["ID"]]);
+    if ($otc_coupon) {
+        WC()->session->set("wc_otc_coupon", null);
+        $wpdb->update($table_name, ["order_id" => $order_id], ["ID" => $otc_coupon["ID"]]);
+    }
+
 }, 10);
+

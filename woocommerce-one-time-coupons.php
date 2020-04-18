@@ -10,28 +10,13 @@ Author URI: https://github.com/Rgghgh/
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-class WoocommerceOneTimeCouponsPlugin
-{
-    private $version;
-    private $table_name;
+register_activation_hook(__FILE__, function () {
+    global $wpdb;
+    $charset_collate = $wpdb->get_charset_collate();
+    $version = '1.0';
+    $table_name = $wpdb->prefix . 'woocommerce_one_time_coupons';
 
-    public function __construct()
-    {
-        global $wpdb;
-        $this->version = '1.0';
-        $this->table_name = $wpdb->prefix . 'woocommerce_one_time_coupons';
-
-        register_activation_hook(__FILE__, [$this, 'install']);
-        register_deactivation_hook(__FILE__, [$this, 'uninstall']);
-        add_action('plugins_loaded', [$this, 'update']);
-    }
-
-    public function install()
-    {
-        global $wpdb;
-        $charset_collate = $wpdb->get_charset_collate();
-
-        $sql = "CREATE TABLE $this->table_name (
+    $sql = "CREATE TABLE $table_name (
 			`ID` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT, 
 			`coupon_id` BIGINT(20) UNSIGNED NOT NULL,
 			`order_id` BIGINT(20) UNSIGNED NULL DEFAULT NULL,
@@ -40,30 +25,55 @@ class WoocommerceOneTimeCouponsPlugin
 			UNIQUE (`code`)
 	   	) $charset_collate;";
 
-        dbDelta($sql);
-        add_option('wotc_version', $this->version);
-    }
+    dbDelta($sql);
+    add_option('wotc_version', $version);
+});
 
-    public function uninstall()
-    {
-        global $wpdb;
-        $sql = "DROP TABLE $this->table_name;";
-        dbDelta($sql);
-        delete_option('wotc_version');
-    }
+add_filter('woocommerce_coupon_data_tabs', function ($tabs) {
+    $tabs['wc_otc_coupon_data'] = array(
+        'label' => __('WebDav Coupon', 'webdav-coupon-plugin'),
+        'target' => 'wc_otc_coupon_data',
+        'class' => 'wc_otc_coupon_data'
+    );
+    return $tabs;
+}, 10, 1);
 
-    public function update()
-    {
-        if (get_site_option('wotc_version') != $this->version) {
-            $this->uninstall();
-            $this->install();
-        }
-    }
-}
+add_action('woocommerce_coupon_data_panels', function () {
+    ?>
+    <div id="wc_otc_coupon_data" class="panel woocommerce_options_panel"><?php
 
-// Run Plugin
-new WoocommerceOneTimeCouponsPlugin();
+    echo '<div class="options_group">';
 
+    woocommerce_wp_checkbox(array(
+        'id' => 'wc_autoship_enabled',
+        'label' => __('Enable for Autoship', 'wc-autoship'),
+        'description' => __('Enable this coupon when autoship items are added to the cart.', 'wc-autoship'),
+    ));
+
+    // Usage limit per coupons
+    woocommerce_wp_text_input(array(
+        'id' => 'wc_autoship_min_item_quantity',
+        'label' => __('Minimum Quantity', 'wc-autoship'),
+        'description' => __('The minimum number of autoship items required in the shopping cart.', 'wc-autoship'),
+        'type' => 'number',
+        'desc_tip' => true,
+        'class' => 'short',
+        'custom_attributes' => array(
+            'step' => '1',
+            'min' => '1'
+        )
+    ));
+
+    woocommerce_wp_checkbox(array(
+        'id' => 'wc_autoship_apply_automatically',
+        'label' => __('Apply Automatically', 'wc-autoship'),
+        'description' => __('Apply this coupon to the cart automatically.', 'wc-autoship'),
+    ));
+
+    echo '</div>';
+
+    ?></div><?php
+});
 
 /*
 

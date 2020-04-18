@@ -148,24 +148,29 @@ add_filter('woocommerce_coupon_code', function ($value) {
     global $wpdb;
     $table_name = $wpdb->prefix . WC_OTC_TABLE;
 
-    $sql = "SELECT coupon_id FROM $table_name WHERE code='%s'";
-    $coupon_id = $wpdb->get_var($wpdb->prepare($sql, $value));
-    if ($coupon_id) {
-        if (!WC()->session->has_session())
-            throw new Exception("NO SESSION");
-        WC()->session->set('wc_otc_coupon', $value);
-        return get_the_title($coupon_id);
+    $sql = "SELECT * FROM $table_name WHERE code='%s'";
+    $otc_coupon = $wpdb->get_row($wpdb->prepare($sql, $value), ARRAY_A);
+    if ($otc_coupon) {
+        $original = get_the_title($otc_coupon["coupon_id"]); # TODO: no such post
+        $otc_coupon["original"] = $original;
+        WC()->session->set('wc_otc_coupon', $otc_coupon);
+        return $original;
     }
 
     return $value;
 });
 
 add_filter('woocommerce_coupon_is_valid', function ($value, WC_Coupon $coupon) {
-    if (WC()->session->get("wc_otc_coupon"))
+    $otc_coupon = WC()->session->get("wc_otc_coupon");
+    if ($otc_coupon && $otc_coupon["original"] == $coupon->get_code()) {
+        if ($otc_coupon["order_id"])
+            throw new Exception("Already used");
+        return $value;
+    }
 
-
-    if ($coupon->get_meta('is_otc_coupon') && !WC()->session->get("wc_otc_coupon"))
+    if ($coupon->get_meta('is_otc_coupon'))
         throw new Exception("is otc");
+
     return $value;
 }, 1, 2);
 
@@ -173,5 +178,5 @@ add_action('woocommerce_new_order', function ($order_id) {
     global $wpdb;
     $table_name = $wpdb->prefix . WC_OTC_TABLE;
     $otc_coupon = WC()->session->get("wc_otc_coupon");
-    $wpdb->update($table_name, ["order_id" => $order_id], ["code" => $otc_coupon]);
+    $wpdb->update($table_name, ["order_id" => $order_id], ["ID" => $otc_coupon["ID"]]);
 }, 10);

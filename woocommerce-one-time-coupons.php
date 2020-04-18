@@ -1,105 +1,92 @@
 <?php
-/**
- * @package Creating Tables Boilerplate WordPress Plugin
- * @version 1.0
- */
 /*
-Plugin Name: Creating Tables Boilerplate WordPress Plugin
-Plugin URI: https://praison.com/
-Description: Creating Tables Boilerplate WordPress Plugin
-Author: Mervin Praison 
+Plugin Name: Woocommerce One Time Coupons
+Plugin URI: https://github.com/Rgghgh/woocommerce-one-time-coupons
+Description: Single Use Coupons for woocommerce
+Author: Rgghgh
 Version: 1.0
-Author URI: https://praison.com/
+Author URI: https://github.com/Rgghgh/
 */
 
-global $jal_db_version;
-$jal_db_version = '1.0';
+require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-/*Creating or Updating the Table*/
+class WoocommerceOneTimeCouponsPlugin
+{
+    private $version;
+    private $table_name;
 
-function jal_install() {
-	global $wpdb;
-	global $jal_db_version;
+    public function __construct()
+    {
+        global $wpdb;
+        $this->version = '1.0';
+        $this->table_name = $wpdb->prefix . 'woocommerce_one_time_coupons';
 
-	$table_name = $wpdb->prefix . 'liveshoutbox';
-	
-	$charset_collate = $wpdb->get_charset_collate();
+        register_activation_hook(__FILE__, [$this, 'install']);
+        register_deactivation_hook(__FILE__, [$this, 'uninstall']);
+        add_action('plugins_loaded', [$this, 'update']);
+    }
 
-	$sql = "CREATE TABLE $table_name (
-		id mediumint(9) NOT NULL AUTO_INCREMENT,
-		time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-		name tinytext NOT NULL,
-		text text NOT NULL,
-		url varchar(55) DEFAULT '' NOT NULL,
-		PRIMARY KEY  (id)
-	) $charset_collate;";
+    public function install()
+    {
+        global $wpdb;
+        $charset_collate = $wpdb->get_charset_collate();
 
-	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-	dbDelta( $sql );
+        $sql = "CREATE TABLE $this->table_name (
+			`ID` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT, 
+			`coupon_id` BIGINT(20) UNSIGNED NOT NULL,
+			`order_id` BIGINT(20) UNSIGNED NULL DEFAULT NULL,
+			`code` TEXT NOT NULL,
+			PRIMARY KEY (`ID`), 
+			UNIQUE (`code`)
+	   	) $charset_collate;";
 
-	add_option( 'jal_db_version', $jal_db_version );
+        dbDelta($sql);
+        add_option('wotc_version', $this->version);
+    }
 
-	/*Adding an Upgrade Function*/
+    public function uninstall()
+    {
+        global $wpdb;
+        $sql = "DROP TABLE $this->table_name;";
+        dbDelta($sql);
+        delete_option('wotc_version');
+    }
 
-	global $wpdb;
-	$installed_ver = get_option( "jal_db_version" );
-
-	if ( $installed_ver != $jal_db_version ) {
-
-		$table_name = $wpdb->prefix . 'liveshoutbox';
-
-		$sql = "CREATE TABLE $table_name (
-			id mediumint(9) NOT NULL AUTO_INCREMENT,
-			time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-			name tinytext NOT NULL,
-			text text NOT NULL,
-			url varchar(100) DEFAULT '' NOT NULL,
-			PRIMARY KEY  (id)
-		);";
-
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-		dbDelta( $sql );
-
-		update_option( "jal_db_version", $jal_db_version );
-	}
-
-}
-
-/*Adding Initial Data*/
-
-function jal_install_data() {
-
-	global $wpdb;
-	
-	$welcome_name = 'Mr. WordPress';
-	$welcome_text = 'Congratulations, you just completed the installation!';
-	
-	$table_name = $wpdb->prefix . 'liveshoutbox';
-	
-	$wpdb->insert( 
-		$table_name, 
-		array( 
-			'time' => current_time( 'mysql' ), 
-			'name' => $welcome_name, 
-			'text' => $welcome_text, 
-		) 
-	);
-}
-
-/*Calling the functions*/
-
-register_activation_hook( __FILE__, 'jal_install' );
-register_activation_hook( __FILE__, 'jal_install_data' );
-
-
-function myplugin_update_db_check() {
-    global $jal_db_version;
-    if ( get_site_option( 'jal_db_version' ) != $jal_db_version ) {
-        jal_install();
+    public function update()
+    {
+        if (get_site_option('wotc_version') != $this->version) {
+            $this->uninstall();
+            $this->install();
+        }
     }
 }
-add_action( 'plugins_loaded', 'myplugin_update_db_check' );
+
+// Run Plugin
+new WoocommerceOneTimeCouponsPlugin();
 
 
+/*
+
+function wotc_install_data()
+{
+
+    global $wpdb;
+
+    $welcome_name = 'Mr. WordPress';
+    $welcome_text = 'Congratulations, you just completed the installation!';
+
+    $table_name = $wpdb->prefix . 'liveshoutbox';
+
+    $wpdb->insert(
+        $table_name,
+        array(
+            'time' => current_time('mysql'),
+            'name' => $welcome_name,
+            'text' => $welcome_text,
+        )
+    );
+}
+
+ */
 
 ?>

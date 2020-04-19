@@ -16,6 +16,10 @@ define("WC_OTC_TEXT_DOMAIN", 'wc-one-time-coupons');
 define("WC_OTC_TABLE", "woocommerce_one_time_coupons");
 define("WC_OTC_COUPON_LENGTH", 8);
 
+/**
+ * Setup
+ */
+
 register_activation_hook(__FILE__, function () {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -33,6 +37,10 @@ register_activation_hook(__FILE__, function () {
     dbDelta($sql);
     add_option('wc_otc_version', WC_OTC_VERSION);
 });
+
+/**
+ * Admin Panel
+ */
 
 add_filter('woocommerce_coupon_data_tabs', function ($tabs) {
     $tabs['wc_otc_coupon_data'] = array(
@@ -137,43 +145,55 @@ add_action('wc_otc_generate_codes', function ($post_id, $count) {
     $wpdb->query($wpdb->prepare("$query ", $values));
 }, 1, 2);
 
-add_filter('woocommerce_coupon_code', function ($value) {
+/**
+ * Coupon Logic
+ */
+
+add_filter('woocommerce_get_shop_coupon_data', function ($false, $code, WC_Coupon $wc_coupon) {
     global $wpdb;
     $table_name = $wpdb->prefix . WC_OTC_TABLE;
 
     $sql = "SELECT * FROM $table_name WHERE code='%s'";
-    $otc_coupon = $wpdb->get_row($wpdb->prepare($sql, $value), ARRAY_A);
-    if ($otc_coupon) {
-        $original = get_the_title($otc_coupon["coupon_id"]); # TODO: no such post
-        $otc_coupon["original"] = $original;
-        WC()->session->set('wc_otc_coupon', $otc_coupon);
-        return $original;
-    }
+    $otc_coupon = $wpdb->get_row($wpdb->prepare($sql, $code), ARRAY_A);
+    if (!$otc_coupon)
+        return false;
 
-    return $value;
-});
+    $original = new WC_Coupon($otc_coupon['coupon_id']);
+    if (!$original)
+        return false;
+
+    if (!$original->get_meta("is_otc_coupon"))
+        return false;
+
+    $data = $original->get_data();
+    $data['usage_count'] = $otc_coupon['order_id'] ? 1 : 0;
+    $data['usage_limit'] = 1;
+    return $data;
+}, 10, 3);
 
 add_filter('woocommerce_coupon_is_valid', function ($value, WC_Coupon $coupon) {
-    $otc_coupon = WC()->session->get("wc_otc_coupon");
-    if ($otc_coupon && $otc_coupon["original"] == $coupon->get_code()) {
-        if ($otc_coupon["order_id"])
-            throw new Exception(__("This coupon has already been used.", WC_OTC_TEXT_DOMAIN));
-        return $value;
-    }
-
     if ($coupon->get_meta('is_otc_coupon'))
         return false;
     return $value;
 }, 1, 2);
 
+add_action('woocommerce_order_status_pending', 'wc_update_otc_coupon_usage');
+add_action('woocommerce_order_status_completed', 'wc_update_otc_coupon_usage');
+add_action('woocommerce_order_status_processing', 'wc_update_otc_coupon_usage');
+add_action('woocommerce_order_status_on-hold', 'wc_update_otc_coupon_usage');
+add_action('woocommerce_order_status_cancelled', 'wc_update_otc_coupon_usage');
 
-add_action('woocommerce_removed_coupon', function ($coupon_code) {
-    $otc_coupon = WC()->session->get("wc_otc_coupon");
-    if ($otc_coupon && $otc_coupon["original"] == $coupon_code)
-        WC()->session->set("wc_otc_coupon", null);
-}, 10, 1);
+function wc_update_otc_coupon_usage($order_id)
+{
+    $order = wc_get_order($order_id);
+    if (!$order)
+        return;
 
-add_action('woocommerce_new_order', function ($order_id) {
+    $order->get_coupon_codes();
+
+}
+
+add_action('x-woocommerce_new_order', function ($order_id) {
     global $wpdb;
     $table_name = $wpdb->prefix . WC_OTC_TABLE;
     $otc_coupon = WC()->session->get("wc_otc_coupon");
@@ -181,6 +201,22 @@ add_action('woocommerce_new_order', function ($order_id) {
         WC()->session->set("wc_otc_coupon", null);
         $wpdb->update($table_name, ["order_id" => $order_id], ["ID" => $otc_coupon["ID"]]);
     }
-
 }, 10);
 
+# woocommerce_coupon_code
+/*
+add_filter('woocommerce_coupon_code', function ($value) {
+    $coupon_id = wc_get_coupon_id_by_code($value);
+    $products = get_post_meta($coupon_id,'product_ids');
+
+    #foreach ($products as $product)
+        #WC()->cart->add_to_cart($product);
+
+    return $value;
+}, 10, 2);
+*/
+
+
+# Todo maybe woocommerce_process_shop_coupon_meta
+# Todo maybe use woocommerce_get_shop_coupon_data instead of session
+# Todo or maybe woocommerce_get_coupon_id_from_code

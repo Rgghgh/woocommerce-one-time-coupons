@@ -206,21 +206,3 @@ function wc_update_otc_coupon_usage($order_id)
         $wpdb->update($table_name, ["order_id" => $new_order_id], ["code" => $code]);
     }
 }
-
-# woocommerce_coupon_code
-/*
-add_filter('woocommerce_coupon_code', function ($value) {
-    $coupon_id = wc_get_coupon_id_by_code($value);
-    $products = get_post_meta($coupon_id,'product_ids');
-
-    #foreach ($products as $product)
-        #WC()->cart->add_to_cart($product);
-
-    return $value;
-}, 10, 2);
-*/
-
-
-# Todo maybe woocommerce_process_shop_coupon_meta
-# Todo maybe use woocommerce_get_shop_coupon_data instead of session
-# Todo or maybe woocommerce_get_coupon_id_from_code

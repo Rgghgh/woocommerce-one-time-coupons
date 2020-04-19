@@ -185,23 +185,27 @@ add_action('woocommerce_order_status_cancelled', 'wc_update_otc_coupon_usage');
 
 function wc_update_otc_coupon_usage($order_id)
 {
+    global $wpdb;
+    $table_name = $wpdb->prefix . WC_OTC_TABLE;
+    $sql = "SELECT * FROM $table_name WHERE code='%s'";
+
     $order = wc_get_order($order_id);
     if (!$order)
         return;
 
-    $order->get_coupon_codes();
+    foreach ($order->get_coupon_codes() as $code) {
+        $coupon = new WC_Coupon($code);
+        if (!$coupon->get_virtual())
+            continue;
 
-}
+        $otc_coupon = $wpdb->get_row($wpdb->prepare($sql, $code), ARRAY_A);
+        if (!$otc_coupon)
+            continue;
 
-add_action('x-woocommerce_new_order', function ($order_id) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . WC_OTC_TABLE;
-    $otc_coupon = WC()->session->get("wc_otc_coupon");
-    if ($otc_coupon) {
-        WC()->session->set("wc_otc_coupon", null);
-        $wpdb->update($table_name, ["order_id" => $order_id], ["ID" => $otc_coupon["ID"]]);
+        $new_order_id = $order->has_status('cancelled') ? null : $order_id;
+        $wpdb->update($table_name, ["order_id" => $new_order_id], ["code" => $code]);
     }
-}, 10);
+}
 
 # woocommerce_coupon_code
 /*

@@ -26,16 +26,16 @@ register_activation_hook(__FILE__, function () {
     $table_name = $wpdb->prefix . WC_OTC_TABLE;
 
     $sql = "CREATE TABLE $table_name (
-			`ID` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT, 
-			`coupon_id` BIGINT(20) UNSIGNED NOT NULL,
-			`order_id` BIGINT(20) UNSIGNED NULL DEFAULT NULL,
-			`code` TEXT NOT NULL,
-			PRIMARY KEY (`ID`), 
-			UNIQUE (`code`)
+			ID BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT, 
+			coupon_id BIGINT(20) UNSIGNED NOT NULL,
+			order_id BIGINT(20) UNSIGNED NULL DEFAULT NULL,
+			code TEXT NOT NULL,
+			PRIMARY KEY (ID), 
+			UNIQUE (code)
 	   	) $charset_collate;";
 
     dbDelta($sql);
-    add_option('wc_otc_version', WC_OTC_VERSION);
+    update_option('wc_otc_version', WC_OTC_VERSION);
 });
 
 /**
@@ -81,7 +81,6 @@ add_action('woocommerce_coupon_data_panels', function ($coupon_id, $coupon) {
 
     echo '</div>';
     echo '<div class="options_group">';
-    echo "<legend>Test</legend>";
 
     woocommerce_wp_textarea_input(array(
         'id' => 'free_codes',
@@ -121,7 +120,7 @@ function get_codes($coupon_id, $state = WC_OTC_ALL)
 
 add_action('woocommerce_process_shop_coupon_meta', function ($post_id) {
     update_post_meta($post_id, 'is_otc_coupon', $_POST['is_otc_coupon']);
-    update_post_meta($post_id, 'otc_coupon_prefix', $_POST['otc_coupon_prefix']);
+    update_post_meta($post_id, 'otc_coupon_prefix', wc_format_coupon_code($_POST['otc_coupon_prefix']));
     if ($_POST['codes_to_generate'])
         do_action('wc_otc_generate_codes', $post_id, (int)$_POST['codes_to_generate']);
 }, 10, 1);

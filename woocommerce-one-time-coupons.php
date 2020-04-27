@@ -10,7 +10,6 @@ Text Domain: wc-one-time-coupons
 Domain Path: /languages
 */
 
-require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 define("WC_OTC_VERSION", '1.0');
 define("WC_OTC_TEXT_DOMAIN", 'wc-one-time-coupons');
 define("WC_OTC_TABLE", "wc_one_time_coupons");
@@ -29,12 +28,14 @@ register_activation_hook(__FILE__, function () {
 			ID BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT, 
 			coupon_id BIGINT(20) UNSIGNED NOT NULL,
 			order_id BIGINT(20) UNSIGNED NULL DEFAULT NULL,
-			code TEXT NOT NULL,
+			code VARCHAR(512) NOT NULL,
 			PRIMARY KEY (ID), 
 			UNIQUE (code)
 	   	) $charset_collate;";
 
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
+
     update_option('wc_otc_version', WC_OTC_VERSION);
 });
 

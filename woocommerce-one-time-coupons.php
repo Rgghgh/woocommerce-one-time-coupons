@@ -13,7 +13,7 @@ Domain Path: /languages
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 define("WC_OTC_VERSION", '1.0');
 define("WC_OTC_TEXT_DOMAIN", 'wc-one-time-coupons');
-define("WC_OTC_TABLE", "woocommerce_one_time_coupons");
+define("WC_OTC_TABLE", "wc_one_time_coupons");
 define("WC_OTC_COUPON_LENGTH", 8);
 
 /**

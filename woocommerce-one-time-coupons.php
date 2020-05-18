@@ -10,7 +10,7 @@ Text Domain: wc-one-time-coupons
 Domain Path: /languages
 */
 
-define("WC_OTC_VERSION", '1.0');
+define("WC_OTC_VERSION", '1.0.1');
 define("WC_OTC_TEXT_DOMAIN", 'wc-one-time-coupons');
 define("WC_OTC_TABLE", "wc_one_time_coupons");
 define("WC_OTC_COUPON_LENGTH", 8);
@@ -121,7 +121,7 @@ function get_codes($coupon_id, $state = WC_OTC_ALL)
 
 add_action('woocommerce_process_shop_coupon_meta', function ($post_id) {
     update_post_meta($post_id, 'is_otc_coupon', $_POST['is_otc_coupon']);
-    update_post_meta($post_id, 'otc_coupon_prefix', wc_format_coupon_code($_POST['otc_coupon_prefix']));
+    update_post_meta($post_id, 'otc_coupon_prefix', wc_format_coupon_code(trim($_POST['otc_coupon_prefix'])));
     if ($_POST['codes_to_generate'])
         do_action('wc_otc_generate_codes', $post_id, (int)$_POST['codes_to_generate']);
 }, 10, 1);

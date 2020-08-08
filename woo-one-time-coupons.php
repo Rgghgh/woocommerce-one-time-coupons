@@ -1,17 +1,17 @@
 <?php
 /*
-Plugin Name: Woocommerce One Time Coupons
+Plugin Name: Woo One Time Coupons
 Plugin URI: https://github.com/Rgghgh/woocommerce-one-time-coupons
 Description: Single Use Coupons for woocommerce
 Author: Rgghgh
 Version: 1.0
 Author URI: https://github.com/Rgghgh/
-Text Domain: wc-one-time-coupons
+Text Domain: woo-one-time-coupons
 Domain Path: /languages
 */
 
 define("WC_OTC_VERSION", '1.0.1');
-define("WC_OTC_TEXT_DOMAIN", 'wc-one-time-coupons');
+define("WC_OTC_TEXT_DOMAIN", 'woo-one-time-coupons');
 define("WC_OTC_TABLE", "wc_one_time_coupons");
 define("WC_OTC_COUPON_LENGTH", 8);
 

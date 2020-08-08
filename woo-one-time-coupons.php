@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Woo One Time Coupons
+Plugin Name: One Time Coupons for WooCommerce
 Plugin URI: https://github.com/Rgghgh/woocommerce-one-time-coupons
 Description: Single Use Coupons for woocommerce
 Author: Rgghgh

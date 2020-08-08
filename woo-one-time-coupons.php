@@ -4,7 +4,7 @@ Plugin Name: One Time Coupons for WooCommerce
 Plugin URI: https://github.com/Rgghgh/woocommerce-one-time-coupons
 Description: Single Use Coupons for woocommerce
 Author: Rgghgh
-Version: 1.0
+Version: 1.0.1
 Author URI: https://github.com/Rgghgh/
 Text Domain: woo-one-time-coupons
 Domain Path: /languages

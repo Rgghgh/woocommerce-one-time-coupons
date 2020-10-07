@@ -4,7 +4,7 @@ Plugin Name: One Time Coupons for WooCommerce
 Plugin URI: https://github.com/Rgghgh/woocommerce-one-time-coupons
 Description: Single Use Coupons for woocommerce
 Author: Rgghgh
-Version: 1.0.1
+Version: 1.0.2
 Author URI: https://github.com/Rgghgh/
 Text Domain: woo-one-time-coupons
 Domain Path: /languages
@@ -121,7 +121,7 @@ function wcotc_get_codes($coupon_id, $state = WCOTC_ALL)
 
 add_action('woocommerce_process_shop_coupon_meta', function ($post_id) {
     update_post_meta($post_id, 'is_otc_coupon', boolval($_POST['is_otc_coupon']));
-    update_post_meta($post_id, 'otc_coupon_prefix', wc_format_coupon_code(trim($_POST['otc_coupon_prefix'])));
+    update_post_meta($post_id, 'otc_coupon_prefix', wc_format_coupon_code(trim(wc_sanitize_coupon_code($_POST['otc_coupon_prefix']))));
     if ($_POST['codes_to_generate'] && is_numeric($_POST['codes_to_generate']))
         do_action('wcotc_generate_codes', $post_id, (int)$_POST['codes_to_generate']);
 }, 10, 1);
